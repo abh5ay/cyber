@@ -1,102 +1,142 @@
-EXPERIMENT 1 a:
+Exercises
 
-You have received a suspicious Windows executable file named suspicious.exe. Without running it, identify unique patterns or signatures that could indicate its malware family or type. Use an open-source tool to create rules or signatures that can help classify this file among others.
+1. Simple malware behavior simulation using Python
+ 
 
-A basic generic YARA rule has already been created to detect common Windows malware indicators such as process injection APIs and command execution strings.
+a. Verify Python Installation
+                   python3 –version
 
-Tool: YARA
+b. Create Python Program
+ 
 
-Important Disclaimer:
-We will NOT use live malware binaries. That would be unsafe and unethical. Instead, we use malware signatures embedded into test binaries.
+mkdir malware_lab
 
-The main goal is to:
-- Identify and classify a suspicious binary file WITHOUT executing it, by using static patterns (strings, headers, APIs) and YARA rules
-- NOT infecting the system
-- NOT running malware
-- Only matching patterns
+cd malware_lab
 
-YARA is an open-source tool used to identify and classify malware based on textual patterns, strings, and binary characteristics.
+ 
 
-By performing static analysis, malware behavior can be inferred without running the file, ensuring system safety.
+vi system_info_malware.py
 
-What are we analyzing:
-We analyze binary files (mostly .exe) and look for:
-- Malware-specific strings
-- Windows API function names
-- PE (Portable Executable) file headers
-- Registry or command indicators
+ 
 
-These indicators help us guess the malware type.
+import platform
 
-Why YARA tool?
-YARA works like pattern matching:
+import socket
 
-"If this file contains these strings/structures, then classify it as this type of malware."
+from datetime import datetime
 
-Procedure (Steps for performing experiment)
+ 
 
-In Kali Linux VM:
+file = open("sysinfo_log.txt", "a")
 
-1. Update and Upgrade:
-sudo apt update && sudo apt upgrade -y
+ 
 
-2. Install YARA:
-sudo apt install yara -y
+file.write("System Information\n")
 
-3. Check YARA version:
-yara --version
+file.write("Date & Time: " + str(datetime.now()) + "\n")
 
-Step 1: Use a known test malware sample
+file.write("System: " + platform.system() + "\n")
 
-Creating sample file:
+file.write("Node Name: " + platform.node() + "\n")
 
-- Go to Kali Linux browser and search for EICAR.com
-- In EICAR website, choose eicar.com and download the file
-- Copy the contents of downloaded file into a sample executable
+file.write("Release: " + platform.release() + "\n")
 
-vi sample.exe
+file.write("Version: " + platform.version() + "\n")
 
-Paste:
-X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*
+file.write("Machine: " + platform.machine() + "\n")
 
-Save and exit
+file.write("Processor: " + platform.processor() + "\n")
 
-OR create a new exe file:
-echo "Student malware lab test: EICAR sample" > simple.exe
+file.write("IP Address: " + socket.gethostbyname(socket.gethostname()) + "\n")
 
-Step 2: Create YARA rules:
+file.write("===============================\n\n")
 
-vi eicar_rule.yar
+ 
 
-rule EICAR_Test_File
-{
-    meta:
-        author = "Lab Student"
-        description = "Detects EICAR antivirus test file"
-        reference = "Standard test signature"
+file.close()
 
-    strings:
-        $eicar_full = "EICAR-STANDARD-ANTIVIRUS-TEST-FILE" ascii wide nocase
-        $eicar_part = "EICAR" ascii wide nocase
+c. Execute the Program
+python3 system_info_malware.py
 
-    condition:
-        any of ($eicar*)
-}
+ 
 
-Step 3: Run the rule:
+d. View Output
+cat sysinfo_log.txt
 
-yara eicar_rule.yar sample.exe
+ 
 
-Expected output:
-EICAR_Test_File sample.exe
+Creates log file and collects details (Malware Collects details before launching attacks)
 
-Possible results:
-- No output -> benign PE (expected for nc.exe)
-- Rule name printed -> suspicious indicators found
+ 
 
-Both results are valid for the experiment.
+ 
 
-Result:
-- The suspicious binary contains known malware-related strings
-- YARA rules successfully detected the file based on static signatures
-- No execution of the file was required
+2. Simulated malware Network Beaconing
+ 
+
+a. Go to lab directory and create python program.
+ 
+
+cd ~/malware_lab
+
+ 
+
+vi network_beacon_simulation.py
+
+               
+
+import time
+
+import socket
+
+from datetime import datetime
+
+ 
+
+server = "example.com"
+
+port = 80
+
+log_file = "network_activity.log"
+
+ 
+
+def simulate_beacon():
+
+try:
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+s.settimeout(3)
+
+s.connect((server, port))
+
+s.close()
+
+return "Connection successful"
+
+except:
+
+return "Connection failed"
+
+ 
+
+for i in range(5):
+
+result = simulate_beacon()
+
+with open(log_file, "a") as f:
+
+f.write(f"{datetime.now()} - Beacon attempt to {server}:{port} - {result}\n")
+
+time.sleep(5)
+
+ 
+
+b. Run the program
+python3 network_beacon_simulation.py
+
+ 
+
+c. View Output log
+cat network_activity.log
