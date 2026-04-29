@@ -1,17 +1,17 @@
-Part A:
-Experiment 3: Disassemble the suspicious binary and analyse its code flow to determine what
-actions the malware is programmed to perform. Identify any suspicious API calls or functions
-it uses that could indicate malicious intent.
+```id="u2f9kx"
+EXPERIMENT 3 (Part A):
+
+Disassemble the suspicious binary and analyze its code flow to determine what actions the malware is programmed to perform. Identify any suspicious API calls or functions that could indicate malicious intent.
+
 Tool: Ghidra
 
-Static malware analysis involves examining an executable without running it to understand its
-behavior. Disassembly and decompilation reveal program logic, API usage, and control flow,
-which help determine whether the binary performs malicious actions such as persistence, file
-manipulation, or network communication.
+Static malware analysis involves examining an executable without running it to understand its behavior. Disassembly and decompilation reveal program logic, API usage, and control flow, which help determine whether the binary performs malicious actions such as persistence, file manipulation, or network communication.
 
+----------------------------------------
 PART A: Creating the Suspicious Binary (Kali Linux VM)
+----------------------------------------
 
-Step 1: Install MinGW-w64 (Kali Linux VM)
+Step 1: Install MinGW-w64
 sudo apt update
 sudo apt install mingw-w64
 
@@ -19,167 +19,195 @@ Step 2: Create Working Directory
 mkdir ghidra_lab
 cd ghidra_lab
 
-Step 3: Create Suspicious Source code
-
 Step 3: Create Suspicious Source Code
 nano sample.c
-#include &lt;windows.h&gt;
-#include &lt;stdio.h&gt;
-int main() {
-HKEY hKey;
-HANDLE hFile;
-DWORD bytesWritten;
-char data[] = &quot;System initialized\n&quot;;
-// Create a hidden file (suspicious behavior)
-hFile = CreateFileA(&quot;C:\\Temp\\syslog.txt&quot;, GENERIC_WRITE, 0,NULL,CREATE_ALWAYS,
-FILE_ATTRIBUTE_HIDDEN, NULL);
-WriteFile(hFile, data, sizeof(data), &amp;bytesWritten, NULL);
-CloseHandle(hFile);
-// Add registry persistence
 
-RegCreateKeyExA(HKEY_CURRENT_USER,
-&quot;Software\\Microsoft\\Windows\\CurrentVersion\\Run&quot;, 0,NULL,0,KEY_WRITE,NULL,&amp;hKey,
-NULL);
-RegSetValueExA(hKey,&quot;SystemUpdater&quot;, 0,REG_SZ,(BYTE*)&quot;C:\\Temp\\sample.exe&quot;, 20);
-RegCloseKey(hKey);
-MessageBoxA(NULL, &quot;Service Started&quot;, &quot;System&quot;, MB_OK);
-return 0;
+#include <windows.h>
+#include <stdio.h>
+
+int main() {
+    HKEY hKey;
+    HANDLE hFile;
+    DWORD bytesWritten;
+    char data[] = "System initialized\n";
+
+    // Create a hidden file (suspicious behavior)
+    hFile = CreateFileA("C:\\Temp\\syslog.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                        FILE_ATTRIBUTE_HIDDEN, NULL);
+
+    WriteFile(hFile, data, sizeof(data), &bytesWritten, NULL);
+    CloseHandle(hFile);
+
+    // Add registry persistence
+    RegCreateKeyExA(HKEY_CURRENT_USER,
+        "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+        0, NULL, 0, KEY_WRITE, NULL, &hKey, NULL);
+
+    RegSetValueExA(hKey, "SystemUpdater", 0, REG_SZ,
+        (BYTE*)"C:\\Temp\\sample.exe", 20);
+
+    RegCloseKey(hKey);
+
+    MessageBoxA(NULL, "Service Started", "System", MB_OK);
+
+    return 0;
 }
+
 Save and exit.
 
-Step 4: Compile Windows Executable in Kali Linux VM
+Step 4: Compile Windows Executable
 x86_64-w64-mingw32-gcc sample.c -o sample.exe
 
 Step 5: Verify Binary Type
 file sample.exe
+
 Expected output:
 PE32+ executable (console) x86-64, for MS Windows
-✔ Suspicious binary successfully created.
 
+Suspicious binary successfully created.
+
+----------------------------------------
 PART B: Preparing Ghidra (Kali Linux)
-Then before installing Ghidra, make sure
-Jdk is installed
+----------------------------------------
+
+Install JDK:
 sudo apt install -y openjdk-21-jdk
-Step 7: Install Ghidra
+
+Install Ghidra:
 sudo apt install -y ghidra
-Step 7: Launch Ghidra
+
+Launch Ghidra:
 ghidra
 
-Step 8: Create a New Project
-1. File → New Project
-2. Select Non-Shared Project
-3. Project name: Malware_Ghidra_Analysis
-4. Choose workspace directory
+Step 1: Create a New Project
+- File → New Project
+- Select Non-Shared Project
+- Project name: Malware_Ghidra_Analysis
+- Choose workspace directory
 
-Step 9: Import the Suspicious Binary
-1. File → Import File
-2. Select sample.exe
-3. Format: PE
-4. Click OK
+Step 2: Import the Suspicious Binary
+- File → Import File
+- Select sample.exe
+- Format: PE
+- Click OK
 
-Step 10: Analyze the Binary
+Step 3: Analyze the Binary
 When prompted:
-✔ Analyze
-✔ Default analyzers
-✔ PE analyzers
-✔ Decompiler
-Click Analyze
+- Select Analyze
+- Enable default analyzers
+- Enable PE analyzers
+- Enable Decompiler
+- Click Analyze
 
+----------------------------------------
 PART C: Initial Binary Inspection
-1. Symbol Tree (Functions &amp; Imports)
-How to open
-Menu bar:
-Window → Symbol Tree
-What you observe
+----------------------------------------
 
-This shows:
- Functions
- Imported APIs
- Exported symbols
- Labels
-Expand:
+1. Symbol Tree (Functions & Imports)
+
+Open:
+Window → Symbol Tree
+
+Shows:
+- Functions
+- Imported APIs
+- Exported symbols
+- Labels
+
+Structure:
 Symbol Tree
 ├── Functions
 ├── Imports
 └── Labels
-What to check for your sample.exe
-Under Imports, you should see APIs like:
-CreateFileA
-WriteFile
-CloseHandle
-RegCreateKeyExA
-RegSetValueExA
-MessageBoxA
-These APIs reveal the capabilities of the executable.
-Example:
-API Meaning
-CreateFileA File creation
-WriteFile Writing data
-RegCreateKeyEx
-A
 
-Registry key
-creation
+Check under Imports:
+- CreateFileA
+- WriteFile
+- CloseHandle
+- RegCreateKeyExA
+- RegSetValueExA
+- MessageBoxA
 
-RegSetValueExA Registry persistence
-MessageBoxA Popup message
+API Meaning:
+- CreateFileA → File creation
+- WriteFile → Writing data
+- RegCreateKeyExA → Registry key creation
+- RegSetValueExA → Registry persistence
+- MessageBoxA → Popup message
+
+----------------------------------------
 
 2. Defined Strings
-How to open
+
+Open:
 Window → Defined Strings
-What you observe
-This panel shows all text strings inside the executable.
-For your program you should see:
-System Initialized
-C:\Temp\syslog.txt
-Software\Microsoft\Windows\CurrentVersion\Run
-SystemUpdater
-C:\Temp\Sample.exe
-Service Started
-System
-Why it is important
+
+Shows:
+- All text strings inside the executable
+
+Expected strings:
+- System initialized
+- C:\Temp\syslog.txt
+- Software\Microsoft\Windows\CurrentVersion\Run
+- SystemUpdater
+- C:\Temp\sample.exe
+- Service Started
+- System
+
+Importance:
 Strings reveal:
- file paths
- registry keys
- messages
- commands
- URLs
-Analysts often start analysis here.
+- File paths
+- Registry keys
+- Messages
+- Commands
+- URLs
+
+----------------------------------------
 
 3. Decompiler Window
-How to open
-Window → Decompiler
-What you observe
-This shows C-like reconstructed code from machine instructions.
-Example you might see:
 
-CreateFileA(&quot;C:\\Temp\\syslog.txt&quot;, ...);
+Open:
+Window → Decompiler
+
+Shows C-like reconstructed code.
+
+Example:
+CreateFileA("C:\\Temp\\syslog.txt", ...);
 WriteFile(...);
 RegCreateKeyExA(...);
 RegSetValueExA(...);
 MessageBoxA(...);
-This helps you understand the program without reading assembly.
+
+Helps understand logic without assembly.
+
+----------------------------------------
 
 4. Listing Window (Assembly View)
-How to open
+
+Open:
 Window → Listing
-What you observe
-This shows the actual assembly instructions of the program.
+
+Shows assembly instructions.
+
 Example:
-PUSH offset &quot;C:\\Temp\\syslog.txt&quot;
+PUSH offset "C:\\Temp\\syslog.txt"
 CALL CreateFileA
 CALL WriteFile
 CALL RegCreateKeyExA
-This is the real machine-level program execution.
-Malware analysts verify behavior here.
+
+This represents actual machine execution.
+
+----------------------------------------
 
 RESULT
-The suspicious binary was successfully disassembled using Ghidra. Analysis of its code flow and
-API calls revealed that it creates hidden files, establishes registry persistence, and executes
-automatically, indicating malicious intent.
+----------------------------------------
+
+The suspicious binary was successfully disassembled using Ghidra. Analysis of its code flow and API calls revealed that it creates hidden files, establishes registry persistence, and executes automatically, indicating malicious intent.
+
+----------------------------------------
 
 CONCLUSION
-Ghidra static analysis revealed that the analyzed binary performs unauthorized file system
-modification and registry persistence using Windows API calls. These behaviors are
-characteristic of malware designed to maintain persistence and operate stealthily on infected
-systems.
+----------------------------------------
+
+Ghidra static analysis revealed that the analyzed binary performs unauthorized file system modification and registry persistence using Windows API calls. These behaviors are characteristic of malware designed to maintain persistence and operate stealthily on infected systems.
+```
